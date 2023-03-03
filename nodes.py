@@ -280,6 +280,43 @@ class LoraLoader:
         model_lora, clip_lora = comfy.sd.load_lora_for_models(model, clip, lora_path, strength_model, strength_clip)
         return (model_lora, clip_lora)
 
+class MultiLoraLoader:
+    import re
+
+    models_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "models")
+    lora_dir = os.path.join(models_dir, "loras")
+    available_loras = {
+        os.path.splitext(k)[0]: k
+        for k in filter_files_extensions(recursive_search(lora_dir), supported_pt_extensions)
+    }
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": { "model": ("MODEL",),
+                              "clip": ("CLIP", ),
+                              "prompt": ("STRING", {"multiline": True, "dynamic_prompt": False}),
+                              }}
+    RETURN_TYPES = ("MODEL", "CLIP")
+    FUNCTION = "load_loras"
+
+    CATEGORY = "loaders"
+    PATTERN = re.compile("([\w-]+):((\d*[.])?\d+)")
+
+    def load_loras(self, model, clip, prompt):
+
+        for match in self.PATTERN.finditer(prompt):
+            name = match.group(1)
+            strength = float(match.group(2))
+            if not name in self.available_loras:
+                print("lora %s not found" % name)
+                continue
+
+            print("applying {0} with {1} strength".format(name, strength))
+            lora_path = os.path.join(self.lora_dir, self.available_loras[name])
+            model, clip = comfy.sd.load_lora_for_models(model, clip, lora_path, strength, strength)
+
+        return (model, clip)
+
 class VAELoader:
     models_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "models")
     vae_dir = os.path.join(models_dir, "vae")
@@ -977,6 +1014,7 @@ NODE_CLASS_MAPPINGS = {
     "LatentFlip": LatentFlip,
     "LatentCrop": LatentCrop,
     "LoraLoader": LoraLoader,
+    "MultiLoraLoader": MultiLoraLoader,
     "CLIPLoader": CLIPLoader,
     "CLIPVisionEncode": CLIPVisionEncode,
     "StyleModelApply": StyleModelApply,
