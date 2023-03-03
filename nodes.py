@@ -793,6 +793,8 @@ class SaveImage:
     CATEGORY = "image"
 
     def save_images(self, images, filename_prefix="ComfyUI", prompt=None, extra_pnginfo=None):
+        from joblib import Parallel, delayed
+
         def map_filename(filename):
             prefix_len = len(filename_prefix)
             prefix = filename[:prefix_len + 1]
@@ -801,19 +803,19 @@ class SaveImage:
             except:
                 digits = 0
             return (digits, prefix)
+    
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+
         try:
             counter = max(filter(lambda a: a[1][:-1] == filename_prefix and a[1][-1] == "_", map(map_filename, os.listdir(self.output_dir))))[0] + 1
         except ValueError:
             counter = 1
         except FileNotFoundError:
-            os.mkdir(self.output_dir)
+            os.mkdir(self.output_dir + self.url_suffix)
             counter = 1
 
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-
-        paths = list()
-        for image in images:
+        def save_image(image, file):
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             metadata = PngInfo()
@@ -822,10 +824,11 @@ class SaveImage:
             if extra_pnginfo is not None:
                 for x in extra_pnginfo:
                     metadata.add_text(x, json.dumps(extra_pnginfo[x]))
-            file = f"{filename_prefix}_{counter:05}_.png"
             img.save(os.path.join(self.output_dir, file), pnginfo=metadata, optimize=True)
-            paths.append(file + self.url_suffix)
-            counter += 1
+
+        paths = [f"{filename_prefix}_{i:05}_.png" for i in range(counter, counter + len(images))]
+        parallelism = min(4, len(images))
+        Parallel(n_jobs=parallelism)(delayed(save_image)(img, path) for (img, path) in zip(images, paths))
         return { "ui": { "images": paths } }
 
 class PreviewImage(SaveImage):
