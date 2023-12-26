@@ -1,0 +1,15 @@
+[submodule "custom_nodes/comfyroll"]
+	path = custom_nodes/comfyroll
+	url = https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes
+[submodule "custom_nodes/controlnet_aux"]
+	path = custom_nodes/controlnet_aux
+	url = https://github.com/Fannovel16/comfyui_controlnet_aux
+[submodule "custom_nodes/frame_interpolation"]
+	path = custom_nodes/frame_interpolation
+	url = https://github.com/Fannovel16/ComfyUI-Frame-Interpolation
+[submodule "custom_nodes/impact_pack"]
+	path = custom_nodes/impact_pack
+	url = https://github.com/ltdrdata/ComfyUI-Impact-Pack
+[submodule "custom_nodes/video_suite"]
+	path = custom_nodes/video_suite
+	url = https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
